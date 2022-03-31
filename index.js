@@ -47,8 +47,8 @@ bot.on("text", (ctx) => {
   }
 });
 
-const secretPath = `/telegraf/${bot.secretPathComponent()}`;
-
+//const secretPath = `/telegraf/${bot.secretPathComponent()}`;
+const secretPath ='/';
 // Set telegram webhook
 bot.telegram.setWebhook(`https://world-time-teller.herokuapp.com${secretPath}`);
 
