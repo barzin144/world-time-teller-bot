@@ -1,4 +1,3 @@
-// @ts-expect-error `npm install express && npm install --save-dev @types/express`
 import express from "express";
 import { Telegraf } from "telegraf";
 
@@ -52,12 +51,12 @@ const secretPath = `/telegraf/${bot.secretPathComponent()}`;
 
 // Set telegram webhook
 // npm install -g localtunnel && lt --port 3000
-bot.telegram.setWebhook(`https://chilly-panther-89.loca.lt${secretPath}`);
+bot.telegram.setWebhook(`https://world-time-teller.herokuapp.com/${secretPath}`);
 
 const app = express();
 app.get("/", (req, res) => res.send("Hello World!"));
 // Set the bot API endpoint
 app.use(bot.webhookCallback(secretPath));
-app.listen(3000, () => {
-  console.log("Example app listening on port 3000!" + secretPath);
+app.listen(80, () => {
+  console.log("Example app listening on port 80!");
 });
