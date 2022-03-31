@@ -50,7 +50,7 @@ bot.on("text", (ctx) => {
 const secretPath = `/telegraf/${bot.secretPathComponent()}`;
 
 // Set telegram webhook
-bot.telegram.setWebhook(`https://world-time-teller.herokuapp.com/${secretPath}`);
+bot.telegram.setWebhook(`https://world-time-teller.herokuapp.com${secretPath}`);
 
 const app = express();
 app.get("/", (req, res) => res.send("Hello World!"));
