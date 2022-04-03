@@ -37,6 +37,7 @@ bot.command("time", (ctx) => {
 
 bot.on("callback_query", async (ctx) => {
   const selectedInlineQuery = ctx.callbackQuery.data;
+
   if (timeZones.hasOwnProperty(selectedInlineQuery)) {
     let imagePath = `./temp/${uuid()}.png`;
     await setTextOnImage(
@@ -47,6 +48,7 @@ bot.on("callback_query", async (ctx) => {
         hour12: false,
       })}`
     );
+    await ctx.deleteMessage(ctx.callbackQuery.message.id);
     await ctx.replyWithPhoto({
       source: imagePath,
     });
