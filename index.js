@@ -55,6 +55,7 @@ bot.telegram.setWebhook(`https://world-time-teller.herokuapp.com${secretPath}`);
 //bot.telegram.setWebhook(`https://tame-vampirebat-97.loca.lt${secretPath}`);
 
 const app = express();
+app.use(express.static("staticFiles"));
 app.get("/", (req, res) => res.send("This is a Telegram bot"));
 // Set the bot API endpoint
 app.use(bot.webhookCallback(secretPath));
