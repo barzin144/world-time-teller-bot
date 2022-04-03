@@ -6,6 +6,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
+    "local-start": "BOT_TOKEN=5158580967:AAHNI8AJIJt6uGBAOMvYG3RBXkenOvkapxY node index.js",
     "start": "node index.js"
   },
   "keywords": [
@@ -19,6 +20,8 @@
   "license": "ISC",
   "dependencies": {
     "express": "^4.17.3",
-    "telegraf": "^4.7.0"
+    "jimp": "^0.16.1",
+    "telegraf": "^4.7.0",
+    "uuid": "^8.3.2"
   }
 }
