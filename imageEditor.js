@@ -9,9 +9,6 @@ const setTextOnImage = async (image, imagePath, time) => {
     );
     let cityImageWidth = cityImage.bitmap.width;
     let cityImageHeight = cityImage.bitmap.height;
-    let imgDarkener = new Jimp(cityImageWidth, cityImageHeight, "#000000");
-    imgDarkener = imgDarkener.opacity(0.5);
-    cityImage = cityImage.composite(imgDarkener, 0, 0);
 
     let posX = cityImageWidth / 15;
     let posY = cityImageHeight / 15;
