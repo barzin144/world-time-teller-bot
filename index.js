@@ -1,5 +1,5 @@
 import express from "express";
-import * as fs from "fs";
+import { promises as fs } from "fs";
 import localtunnel from "localtunnel";
 import { Telegraf } from "telegraf";
 import { v4 as uuid } from "uuid";
@@ -7,7 +7,7 @@ import { createInlineKeyboard } from "./helper.js";
 import { deleteImage, setTextOnImage } from "./imageEditor.js";
 
 const token = process.env.BOT_TOKEN;
-const timezones = JSON.parse(fs.readFileSync("./timezones.json"));
+const timezones = JSON.parse(await fs.readFile("./timezones.json"));
 
 const commands = {
   get_time: { label: "Get time", value: "time" },
@@ -48,22 +48,68 @@ const replyListOfCities = async (ctx, continent, page) => {
   );
 };
 
-const bot = new Telegraf(token);
-// Set the bot response
-
-bot.command(commands.get_time.value, (ctx) => {
-  const { chat } = ctx.message;
-  const { id } = chat;
-  //find the config of this chat
+const replyConfigMe = async (ctx) => {
   const inlineKeyboard = {
     inline_keyboard: [
       [{ text: commands.start_config.label, callback_data: commands.start_config.value }],
     ],
   };
-  ctx.reply("This is the first time, Please config me ", {
+  await ctx.reply("This is the first time, Please config me ", {
     reply_to_message_id: ctx.message.message_id,
     reply_markup: inlineKeyboard,
   });
+};
+
+const replyUserConfigTimezones = async (ctx, userConfigTimezones) => {
+  const inlineKeyboard = {
+    inline_keyboard: userConfigTimezones.map((x) => [{ text: x.label, callback_data: x.value }]),
+  };
+  await ctx.reply("Select a city", {
+    reply_to_message_id: ctx.message.message_id,
+    reply_markup: inlineKeyboard,
+  });
+};
+
+const isUserConfigExist = async (userId) => {
+  return fs.stat(`./usersConfig/${userId}.json`);
+};
+
+const createUserConfig = async (userId) => {
+  return fs.appendFile(`./usersConfig/${userId}.json`, JSON.stringify({}), "utf8");
+};
+
+const readUserConfig = async (userId) => {
+  return fs.readFile(`./usersConfig/${userId}.json`);
+};
+
+const saveUserConfig = async (userId) => {
+  return fs.writeFile(`.json`, jsonContent, "utf8");
+};
+
+const bot = new Telegraf(token);
+// Set the bot response
+
+bot.command(commands.get_time.value, async (ctx) => {
+  const { chat } = ctx.message;
+  const { id } = chat;
+  try {
+    await isUserConfigExist(id);
+    //read the exsiting user config
+    const data = JSON.parse(await readUserConfig(id));
+    //if the user config is empty
+    if (Object.keys(data).length === 0) {
+      replyConfigMe(ctx);
+    }
+    //reply the exsiting config
+    else {
+      await replyUserConfigTimezones(ctx, data.timezones);
+    }
+  } catch (error) {
+    //file not exsit
+    if (error.code === "ENOENT") {
+      await createUserConfig(id);
+    }
+  }
 });
 
 bot.on("callback_query", async (ctx) => {
@@ -74,6 +120,7 @@ bot.on("callback_query", async (ctx) => {
     return;
   }
 
+  console.log(selectedInlineQuery);
   if (/^city-.+-back/.test(selectedInlineQuery)) {
     await replyListOfContinents(ctx);
     return;
@@ -92,22 +139,14 @@ bot.on("callback_query", async (ctx) => {
     await replyListOfCities(ctx, continent, 1);
     return;
   }
-  // if (timeZones.hasOwnProperty(selectedInlineQuery)) {
-  //   let imagePath = `./temp/${uuid()}.png`;
-  //   await setTextOnImage(
-  //     `${selectedInlineQuery}.jpg`,
-  //     imagePath,
-  //     `${selectedInlineQuery} ${new Date().toLocaleTimeString("en-US", {
-  //       timeZone: timeZones[selectedInlineQuery],
-  //       hour12: false,
-  //     })}`
-  //   );
-  //   await ctx.deleteMessage(ctx.callbackQuery.message.id);
-  //   await ctx.replyWithPhoto({
-  //     source: imagePath,
-  //   });
-  //   deleteImage(imagePath);
-  // }
+
+  await ctx.deleteMessage(ctx.callbackQuery.message.id);
+  await ctx.reply(
+    `${selectedInlineQuery} ${new Date().toLocaleTimeString("en-US", {
+      timeZone: selectedInlineQuery,
+      hour12: false,
+    })}`
+  );
 });
 
 const secretPath = `/telegraf/${bot.secretPathComponent()}`;
