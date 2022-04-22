@@ -4,6 +4,13 @@ import localtunnel from "localtunnel";
 import { Telegraf } from "telegraf";
 import { v4 as uuid } from "uuid";
 import { createInlineKeyboard } from "./helper.js";
+import {
+  createUserConfig,
+  isUserConfigExist,
+  readUserConfig,
+  saveUserConfig,
+  resetUserConfig,
+} from "./fileHelper.js";
 import { deleteImage, setTextOnImage } from "./imageEditor.js";
 
 const token = process.env.BOT_TOKEN;
@@ -11,12 +18,15 @@ const timezones = JSON.parse(await fs.readFile("./timezones.json"));
 
 const commands = {
   get_time: { label: "Get time", value: "time" },
-  start_config: { label: "Start config", value: "start-config" },
+  start_config: { label: "Start config", value: "start_config" },
+  add_to_config: { label: "Add city to config", value: "add_to_config" },
+  reset_config: { label: "Reset config", value: "reset_config" },
 };
 
 if (token === undefined) {
   throw new Error("BOT_TOKEN must be provided!");
 }
+
 const replyListOfContinents = async (ctx) => {
   const inlineKeyboard = {
     inline_keyboard: createInlineKeyboard(Object.keys(timezones), "continent-", 2),
@@ -60,6 +70,30 @@ const replyConfigMe = async (ctx) => {
   });
 };
 
+const replyAddToConfig = async (ctx) => {
+  const inlineKeyboard = {
+    inline_keyboard: [
+      [{ text: commands.add_to_config.label, callback_data: commands.add_to_config.value }],
+    ],
+  };
+  const data = JSON.parse(await readUserConfig(ctx.message.chat.id));
+  const cities = data.timezones.map((x) => x.label);
+  await ctx.reply(`Your config:\n${cities.join("\n")}`, {
+    reply_to_message_id: ctx.message.message_id,
+    reply_markup: inlineKeyboard,
+  });
+};
+
+const replyConfirmResetConfig = async (ctx) => {
+  const inlineKeyboard = {
+    inline_keyboard: [[{ text: "Yes, I'm sure", callback_data: commands.reset_config.value }]],
+  };
+  await ctx.reply("Are you Sure to reset the configuration", {
+    reply_to_message_id: ctx.message.message_id,
+    reply_markup: inlineKeyboard,
+  });
+};
+
 const replyUserConfigTimezones = async (ctx, userConfigTimezones) => {
   const inlineKeyboard = {
     inline_keyboard: userConfigTimezones.map((x) => [{ text: x.label, callback_data: x.value }]),
@@ -68,22 +102,6 @@ const replyUserConfigTimezones = async (ctx, userConfigTimezones) => {
     reply_to_message_id: ctx.message.message_id,
     reply_markup: inlineKeyboard,
   });
-};
-
-const isUserConfigExist = async (userId) => {
-  return fs.stat(`./usersConfig/${userId}.json`);
-};
-
-const createUserConfig = async (userId) => {
-  return fs.appendFile(`./usersConfig/${userId}.json`, JSON.stringify({}), "utf8");
-};
-
-const readUserConfig = async (userId) => {
-  return fs.readFile(`./usersConfig/${userId}.json`);
-};
-
-const saveUserConfig = async (userId) => {
-  return fs.writeFile(`.json`, jsonContent, "utf8");
 };
 
 const bot = new Telegraf(token);
@@ -105,6 +123,7 @@ bot.command(commands.get_time.value, async (ctx) => {
       await replyUserConfigTimezones(ctx, data.timezones);
     }
   } catch (error) {
+    console.log(error);
     //file not exsit
     if (error.code === "ENOENT") {
       await createUserConfig(id);
@@ -112,15 +131,31 @@ bot.command(commands.get_time.value, async (ctx) => {
   }
 });
 
+bot.command(commands.reset_config.value, async (ctx) => {
+  await replyConfirmResetConfig(ctx);
+});
+
+bot.command(commands.add_to_config.value, async (ctx) => {
+  await replyAddToConfig(ctx);
+});
+
 bot.on("callback_query", async (ctx) => {
   const selectedInlineQuery = ctx.callbackQuery.data;
+  const { chat } = ctx.callbackQuery.message;
 
-  if (selectedInlineQuery === commands.start_config.value) {
+  if (
+    selectedInlineQuery === commands.start_config.value ||
+    selectedInlineQuery === commands.add_to_config.value
+  ) {
+    await replyListOfContinents(ctx);
+    return;
+  }
+  if (selectedInlineQuery === commands.reset_config.value) {
+    await resetUserConfig(chat.id);
     await replyListOfContinents(ctx);
     return;
   }
 
-  console.log(selectedInlineQuery);
   if (/^city-.+-back/.test(selectedInlineQuery)) {
     await replyListOfContinents(ctx);
     return;
@@ -131,6 +166,17 @@ bot.on("callback_query", async (ctx) => {
     const page = Number(callbackData[3]);
     const continent = callbackData[1];
     await replyListOfCities(ctx, continent, page);
+    return;
+  }
+
+  if (/^city-.+/.test(selectedInlineQuery)) {
+    const callbackData = selectedInlineQuery.split("-");
+    const city = callbackData[2];
+    const label = city.replace(/_/g, " ");
+    const continent = callbackData[1];
+    await saveUserConfig(chat.id, { label: label, value: `${continent}/${city}` });
+    await ctx.deleteMessage(ctx.callbackQuery.message.message_id);
+    await ctx.reply(`${label} is added to your configuration.`);
     return;
   }
 
@@ -160,6 +206,15 @@ if (process.env.NODE_ENV === "development") {
 } else {
   bot.telegram.setWebhook(`https://world-time-teller.herokuapp.com${secretPath}`);
 }
+
+await bot.telegram.setMyCommands([
+  { command: "time", description: "this command will tell you the world time" },
+  {
+    command: "add_to_config",
+    description: "with this command you can add a city timezone into configurations",
+  },
+  { command: "reset_config", description: "this command will reset the timezone configurations" },
+]);
 
 const app = express();
 app.get("/", (req, res) => res.send("This is a Telegram bot"));
