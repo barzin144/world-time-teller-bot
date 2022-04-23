@@ -133,7 +133,6 @@ bot.command(commands.get_time.value, async (ctx) => {
     }
   } catch (error) {
     //there no config for this user
-    //file not exsit
     if (error.code === "ENOENT") {
       //create an empty file for this user
       await createUserConfig(id);
