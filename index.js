@@ -124,7 +124,7 @@ bot.command(commands.get_time.value, async (ctx) => {
     const data = JSON.parse(await readUserConfig(id));
     //if the user config is empty
     if (Object.keys(data).length === 0) {
-      replyConfigMe(ctx);
+      await replyConfigMe(ctx);
     }
     //reply the exsiting config
     else {
@@ -136,6 +136,7 @@ bot.command(commands.get_time.value, async (ctx) => {
     if (error.code === "ENOENT") {
       //create an empty file for this user
       await createUserConfig(id);
+      await replyConfigMe(ctx);
     }
   }
 });
