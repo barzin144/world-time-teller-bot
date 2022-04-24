@@ -3,13 +3,7 @@ import { promises as fs } from "fs";
 import localtunnel from "localtunnel";
 import { Telegraf } from "telegraf";
 import { createInlineKeyboard } from "./helper.js";
-import {
-  createUserConfig,
-  isUserConfigExist,
-  readUserConfig,
-  saveUserConfig,
-  resetUserConfig,
-} from "./fileHelper.js";
+import { setData, readData, saveUserConfig, resetUserConfig } from "./firebaseHelper.js";
 
 const token = process.env.BOT_TOKEN;
 const timezones = JSON.parse(await fs.readFile("./timezones.json"));
@@ -78,7 +72,7 @@ const replyAddToConfig = async (ctx) => {
     ],
   };
   //read user config
-  const data = JSON.parse(await readUserConfig(ctx.message.chat.id));
+  const data = await readData(ctx.message.chat.id);
   //create list of user selected cities
   const cities = data.timezones.map((x) => x.label);
 
@@ -117,27 +111,23 @@ const bot = new Telegraf(token);
 bot.command(commands.get_time.value, async (ctx) => {
   const { chat } = ctx.message;
   const { id } = chat;
-  try {
-    //check is user has config file or not
-    await isUserConfigExist(id);
-    //read the exsiting user config
-    const data = JSON.parse(await readUserConfig(id));
+  const userConfig = await readData(id);
+  //check is user has config or not
+  if (!!userConfig) {
     //if the user config is empty
-    if (Object.keys(data).length === 0) {
+    if (userConfig.timezones.length === 0) {
       await replyConfigMe(ctx);
     }
     //reply the exsiting config
     else {
       //show cities
-      await replyUserConfigTimezones(ctx, data.timezones);
+      await replyUserConfigTimezones(ctx, userConfig.timezones);
     }
-  } catch (error) {
+  } else {
     //there no config for this user
-    if (error.code === "ENOENT") {
-      //create an empty file for this user
-      await createUserConfig(id);
-      await replyConfigMe(ctx);
-    }
+    //create an empty file for this user
+    await setData({ user_id: id.toString(), timezones: [] });
+    await replyConfigMe(ctx);
   }
 });
 
