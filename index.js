@@ -248,7 +248,11 @@ await bot.telegram.setMyCommands([
 //setup an express app
 const app = express();
 //handle / path
-app.get("/", (req, res) => res.send("This is a Telegram bot"));
+app.get("/", (req, res) =>
+  res.send(
+    "This is a Telegram bot, message it -> <a href='https://t.me/world_time_teller_bot'>https://t.me/world_time_teller_bot</a>"
+  )
+);
 
 // Set the bot API endpoint
 app.use(bot.webhookCallback(secretPath));
