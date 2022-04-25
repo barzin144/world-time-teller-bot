@@ -37,7 +37,7 @@ const replyListOfContinents = async (ctx) => {
 //show list of cities
 const replyListOfCities = async (ctx, continent, page) => {
   const inlineKeyboard = {
-    inline_keyboard: createInlineKeyboard(timezones[continent], `city-${continent}-`, 4, true, {
+    inline_keyboard: createInlineKeyboard(timezones[continent], `city-${continent}-`, 2, true, {
       pageSize: 16,
       page: page,
     }),
