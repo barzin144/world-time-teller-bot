@@ -15,4 +15,4 @@ If you want to develop this bot or run it on your local machine you need to firs
 - npm install
 - npm run local-start
 
-I used "localtunnel" for setting a valid URL which is forwarded to your localhost as a telegram bot webhook
+I used "localtunnel" for setting a valid URL as a telegram bot webhook, this library is forwarding the telegram request into your local host
