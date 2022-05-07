@@ -228,7 +228,6 @@ const secretPath = `/telegraf/${bot.secretPathComponent()}`;
 if (process.env.NODE_ENV === "development") {
   //local webhook
   const tunnel = await localtunnel({ port: 6000 });
-  tunnel.url;
   bot.telegram.setWebhook(`${tunnel.url}${secretPath}`);
 } else {
   //set heroku webhook
