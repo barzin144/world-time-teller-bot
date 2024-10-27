@@ -227,11 +227,11 @@ const secretPath = `/telegraf/${bot.secretPathComponent()}`;
 // Set telegram webhook
 if (process.env.NODE_ENV === "development") {
   //local webhook
-  const tunnel = await localtunnel({ port: 6000 });
+  const tunnel = await localtunnel({ port: process.env.PORT });
   bot.telegram.setWebhook(`${tunnel.url}${secretPath}`);
 } else {
   //set heroku webhook
-  bot.telegram.setWebhook(`https://world-time-teller.herokuapp.com${secretPath}`);
+  bot.telegram.setWebhook(`${process.env.DOMAIN}${secretPath}`);
 }
 
 //send bot commands to telegram
@@ -257,4 +257,4 @@ app.get("/", (req, res) =>
 app.use(bot.webhookCallback(secretPath));
 
 //start the app
-app.listen(process.env.PORT || 6000, () => console.log("Server is running..."));
+app.listen(process.env.PORT, () => console.log("Server is running..."));
