@@ -257,4 +257,4 @@ app.get("/", (req, res) =>
 app.use(bot.webhookCallback(secretPath));
 
 //start the app
-app.listen(process.env.PORT, () => console.log("Server is running..."));
+app.listen(process.env.PORT, () => console.log(`Server is running... on ${process.env.PORT}`));
